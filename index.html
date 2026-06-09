@@ -1,267 +1,32 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Glass Calculator</title>
-    <style>
-        /* CSS STYLES */
-        :root {
-            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent-color: #00d2ff;
-            --text-color: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: var(--bg-gradient);
-            overflow: hidden;
-        }
-
-        /* Decorative background circles */
-        body::before, body::after {
-            content: '';
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            z-index: -1;
-        }
-        body::before {
-            background: linear-gradient(#ff0055, #ff22ee);
-            top: 10%;
-            left: 15%;
-            filter: blur(80px);
-        }
-        body::after {
-            background: linear-gradient(var(--accent-color), #3a7bd5);
-            bottom: 10%;
-            right: 15%;
-            filter: blur(80px);
-        }
-
-        .calculator {
-            display: grid;
-            grid-template-columns: repeat(4, 80px);
-            grid-template-rows: minmax(120px, auto) repeat(5, 80px);
-            gap: 12px;
-            padding: 25px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
-        }
-
-        .display {
-            grid-column: 1 / -1;
-            background: rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            justify-content: space-around;
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            word-wrap: break-word;
-            word-break: break-all;
-        }
-
-        .previous-operand {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1.1rem;
-            min-height: 1.2rem;
-        }
-
-        .current-operand {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 300;
-        }
-
-        button {
-            cursor: pointer;
-            font-size: 1.5rem;
-            border: 1px solid var(--glass-border);
-            outline: none;
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            border-radius: 18px;
-            transition: all 0.2s ease;
-        }
-
-        button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(2px);
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .span-two { grid-column: span 2; }
-
-        .operator {
-            color: var(--accent-color);
-            font-weight: bold;
-            background: rgba(0, 210, 255, 0.1);
-        }
-
-        .equals {
-            background: var(--accent-color);
-            color: #000;
-            font-weight: bold;
-        }
-        
-        .equals:hover {
-            background: #fff;
-            color: #00d2ff;
-        }
-
-        .control {
-            color: #ff5f56;
-            background: rgba(255, 95, 86, 0.1);
-        }
-
-        /* Mobile optimization */
-        @media (max-width: 400px) {
-            .calculator {
-                grid-template-columns: repeat(4, 65px);
-                grid-template-rows: minmax(100px, auto) repeat(5, 65px);
-                gap: 8px;
-                padding: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="calculator">
-        <div class="display">
-            <div id="previous-operand" class="previous-operand"></div>
-            <div id="current-operand" class="current-operand">0</div>
-        </div>
-        <button onclick="clearDisplay()" class="span-two control">AC</button>
-        <button onclick="deleteNumber()" class="control">DEL</button>
-        <button onclick="chooseOperation('÷')" class="operator">÷</button>
-        <button onclick="appendNumber('7')">7</button>
-        <button onclick="appendNumber('8')">8</button>
-        <button onclick="appendNumber('9')">9</button>
-        <button onclick="chooseOperation('×')" class="operator">×</button>
-        <button onclick="appendNumber('4')">4</button>
-        <button onclick="appendNumber('5')">5</button>
-        <button onclick="appendNumber('6')">6</button>
-        <button onclick="chooseOperation('+')" class="operator">+</button>
-        <button onclick="appendNumber('1')">1</button>
-        <button onclick="appendNumber('2')">2</button>
-        <button onclick="appendNumber('3')">3</button>
-        <button onclick="chooseOperation('-')" class="operator">-</button>
-        <button onclick="appendNumber('.')">.</button>
-        <button onclick="appendNumber('0')">0</button>
-        <button onclick="compute()" class="span-two equals">=</button>
-    </div>
-
-    <script>
-        /* JAVASCRIPT LOGIC */
-        let currentOperand = '0';
-        let previousOperand = '';
-        let operation = undefined;
-
-        const currentTextElement = document.getElementById('current-operand');
-        const previousTextElement = document.getElementById('previous-operand');
-
-        function clearDisplay() {
-            currentOperand = '0';
-            previousOperand = '';
-            operation = undefined;
-            updateDisplay();
-        }
-
-        function deleteNumber() {
-            if (currentOperand === '0') return;
-            currentOperand = currentOperand.toString().slice(0, -1);
-            if (currentOperand === '') currentOperand = '0';
-            updateDisplay();
-        }
-
-        function appendNumber(number) {
-            if (number === '.' && currentOperand.includes('.')) return;
-            if (currentOperand === '0' && number !== '.') {
-                currentOperand = number.toString();
-            } else {
-                currentOperand = currentOperand.toString() + number.toString();
-            }
-            updateDisplay();
-        }
-
-        function chooseOperation(op) {
-            if (currentOperand === '') return;
-            if (previousOperand !== '') {
-                compute();
-            }
-            operation = op;
-            previousOperand = currentOperand;
-            currentOperand = '';
-            updateDisplay();
-        }
-
-        function compute() {
-            let computation;
-            const prev = parseFloat(previousOperand);
-            const current = parseFloat(currentOperand);
-            if (isNaN(prev) || isNaN(current)) return;
-
-            switch (operation) {
-                case '+':
-                    computation = prev + current;
-                    break;
-                case '-':
-                    computation = prev - current;
-                    break;
-                case '×':
-                    computation = prev * current;
-                    break;
-                case '÷':
-                    if(current === 0) {
-                        alert("Cannot divide by zero");
-                        clearDisplay();
-                        return;
-                    }
-                    computation = prev / current;
-                    break;
-                default:
-                    return;
-            }
-            
-            // Limit long decimals
-            currentOperand = Math.round(computation * 1000000) / 1000000;
-            operation = undefined;
-            previousOperand = '';
-            updateDisplay();
-        }
-
-        function updateDisplay() {
-            currentTextElement.innerText = currentOperand;
-            if (operation != null) {
-                previousTextElement.innerText = ${previousOperand} ${operation};
-            } else {
-                previousTextElement.innerText = '';
-            }
-        }
-    </script>
+<html>
+<head> 
+  <title>Apple Glass Calculator</title> 
+  <link rel="stylesheet" type="text/css" href="index.css"> 
+  <link rel="shortcut icon" type="image/x-icon" href="https://imgur.com/7wycHdV.png" />
+</head> 
+<body> 
+  <div class="container">
+    <form class="calculator" name="calc"> 
+      <input class="value" type="text" name="txt" readonly=""> 
+      <span class="num clear" onclick="document.calc.txt.value =''">C</span> 
+      <span class="num" onclick="document.calc.txt.value +='/'">÷</span> 
+      <span class="num" onclick="document.calc.txt.value +='*'">×</span> 
+      <span class="num" onclick="document.calc.txt.value +='7'">7</span> 
+      <span class="num" onclick="document.calc.txt.value +='8'">8</span> 
+      <span class="num" onclick="document.calc.txt.value +='9'">9</span> 
+      <span class="num" onclick="document.calc.txt.value +='-'">−</span> 
+      <span class="num" onclick="document.calc.txt.value +='4'">4</span> 
+      <span class="num" onclick="document.calc.txt.value +='5'">5</span> 
+      <span class="num" onclick="document.calc.txt.value +='6'">6</span> 
+      <span class="num plus" onclick="document.calc.txt.value +='+'">+</span> 
+      <span class="num" onclick="document.calc.txt.value +='3'">3</span> 
+      <span class="num" onclick="document.calc.txt.value +='2'">2</span> 
+      <span class="num" onclick="document.calc.txt.value +='1'">1</span> 
+      <span class="num" onclick="document.calc.txt.value +='0'">0</span> 
+      <span class="num" onclick="document.calc.txt.value +='00'">00</span> 
+      <span class="num" onclick="document.calc.txt.value +='.'">.</span> 
+      <span class="num equal" onclick="document.calc.txt.value = eval(calc.txt.value)">=</span> 
+    </form>
+  </div>
 </body>
 </html>
